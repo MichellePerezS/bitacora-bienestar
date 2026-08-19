@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitácora de Bienestar</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,600;1,400&family=Sora:wght@400;500;600;700&display=swap');
+
+:root{
+  --navy: #1B2340;
+  --navy-deep: #12172B;
+  --plum: #4A3B63;
+  --gold: #E8B86D;
+  --rose: #E8879C;
+  --sage: #8FAE8B;
+  --cream: #F5F0E8;
+  --cream-dim: #C9C4BC;
+  --line: rgba(245,240,232,0.12);
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+
+body{
+  background: radial-gradient(ellipse at top, #232B4E 0%, var(--navy-deep) 65%);
+  color: var(--cream);
+  font-family: 'Sora', sans-serif;
+  min-height: 100vh;
+  padding: 0 0 60px 0;
+}
+
+/* starfield */
+.stars{
+  position: fixed; inset: 0; pointer-events:none; z-index:0; opacity:0.5;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, white, transparent),
+    radial-gradient(1px 1px at 90px 80px, white, transparent),
+    radial-gradient(1.5px 1.5px at 160px 40px, white, transparent),
+    radial-gradient(1px 1px at 220px 120px, white, transparent),
+    radial-gradient(1px 1px at 60px 160px, white, transparent),
+    radial-gradient(1.5px 1.5px at 280px 60px, white, transparent),
+    radial-gradient(1px 1px at 320px 190px, white, transparent);
+  background-repeat: repeat;
+  background-size: 340px 220px;
+}
+
+header{
+  position: relative; z-index: 1;
+  padding: 36px 24px 20px;
+  text-align: center;
+}
+header .eyebrow{
+  font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 8px; font-weight: 600;
+}
+header h1{
+  font-family: 'Fraunces', serif; font-weight: 500; font-size: 32px;
+  letter-spacing: 0.5px;
+}
+header p{
+  color: var(--cream-dim); font-size: 14px; margin-top: 6px;
+}
+
+.wrap{ max-width: 640px; margin: 0 auto; padding: 0 16px; position:relative; z-index:1;}
+
+/* Moon / cycle signature element */
+.moon-card{
+  background: linear-gradient(160deg, rgba(74,59,99,0.55), rgba(27,35,64,0.55));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 22px;
+  margin: 18px 0 24px;
+  display: flex; align-items: center; gap: 18px;
+}
+.moon-visual{
+  width: 64px; height: 64px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FBEFD9, var(--gold) 60%, #B98A45 100%);
+  box-shadow: 0 0 24px rgba(232,184,109,0.35);
+  flex-shrink: 0;
+  position: relative;
+}
+.moon-info{flex:1;}
+.moon-info .label{ font-size: 12px; color: var(--cream-dim); text-transform: uppercase; letter-spacing: 1.5px;}
+.moon-info .value{ font-family:'Fraunces', serif; font-size: 22px; margin-top: 2px;}
+.moon-info button{
+  margin-top: 10px; background: var(--rose); color: var(--navy-deep);
+  border:none; border-radius: 999px; padding: 7px 16px; font-size: 13px;
+  font-weight: 600; font-family:'Sora'; cursor:pointer;
+}
+
+/* date selector */
+.date-row{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom: 18px; gap: 12px;
+}
+.date-row input[type=date]{
+  background: rgba(245,240,232,0.06); border: 1px solid var(--line);
+  color: var(--cream); padding: 10px 14px; border-radius: 12px;
+  font-family:'Sora'; font-size:15px; flex:1;
+}
+.date-row .nav-btn{
+  background: rgba(245,240,232,0.06); border: 1px solid var(--line);
+  color: var(--cream); width:40px; height:40px; border-radius:12px;
+  font-size:18px; cursor:pointer;
+}
+
+section.card{
+  background: rgba(245,240,232,0.04);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+section.card h2{
+  font-family:'Fraunces', serif; font-weight:500; font-size:18px;
+  margin-bottom: 14px; display:flex; align-items:center; gap:8px;
+}
+section.card h2 .dot{
+  width:8px; height:8px; border-radius:50%; display:inline-block;
+}
+
+.field-row{ display:flex; gap:12px; margin-bottom: 12px; flex-wrap: wrap;}
+.field{ flex:1; min-width: 120px;}
+.field label{ font-size:12px; color:var(--cream-dim); display:block; margin-bottom:5px;}
+.field input[type=number], .field input[type=text], .field textarea{
+  width:100%; background: rgba(245,240,232,0.06); border:1px solid var(--line);
+  color:var(--cream); padding:9px 12px; border-radius:10px; font-family:'Sora'; font-size:14px;
+}
+.field textarea{ resize:vertical; min-height:48px;}
+
+.scale{ display:flex; gap:6px; }
+.scale button{
+  flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--line);
+  background: rgba(245,240,232,0.04); color:var(--cream-dim); font-size:16px; cursor:pointer;
+  transition: all .15s;
+}
+.scale button.active{
+  background: var(--gold); color: var(--navy-deep); border-color: var(--gold);
+}
+
+.tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top: 4px;}
+.tag{
+  padding:7px 13px; border-radius:999px; border:1px solid var(--line);
+  background: rgba(245,240,232,0.04); color:var(--cream-dim); font-size:13px; cursor:pointer;
+}
+.tag.active{ background: var(--plum); color: var(--cream); border-color: var(--plum);}
+
+.exercise-suggest{
+  background: rgba(232,184,109,0.08); border:1px dashed rgba(232,184,109,0.4);
+  border-radius:12px; padding:10px 14px; font-size:13px; color:var(--gold);
+  margin-bottom:12px;
+}
+
+.check-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.check-row input[type=checkbox]{ width:20px; height:20px; accent-color: var(--sage);}
+.check-row label{ font-size:14px;}
+
+.save-bar{
+  position: sticky; bottom: 0; z-index: 5;
+  padding: 14px 16px 20px; margin-top: 8px;
+}
+.save-bar button{
+  width:100%; padding: 15px; border:none; border-radius: 14px;
+  background: linear-gradient(120deg, var(--gold), #D9A75E);
+  color: var(--navy-deep); font-family:'Sora'; font-weight:700; font-size:15px;
+  cursor:pointer; box-shadow: 0 6px 20px rgba(232,184,109,0.25);
+}
+.save-msg{ text-align:center; font-size:13px; color: var(--sage); margin-top:8px; min-height:16px;}
+
+.history-toggle{
+  text-align:center; margin: 6px 0 20px;
+}
+.history-toggle a{
+  color: var(--cream-dim); font-size:13px; text-decoration: underline; cursor:pointer;
+}
+
+#historyPanel{ display:none; }
+.history-entry{
+  border-bottom: 1px solid var(--line); padding: 12px 0; font-size:13px;
+}
+.history-entry .h-date{ font-family:'Fraunces', serif; font-size:15px; color: var(--gold);}
+.history-entry .h-line{ color: var(--cream-dim); margin-top:2px;}
+
+.loading{ text-align:center; padding:30px; color:var(--cream-dim); font-size:13px;}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<header>
+  <div class="eyebrow">Diario nocturno</div>
+  <h1>Bitácora de Bienestar</h1>
+  <p id="headerSub">Un registro suave, no una exigencia</p>
+</header>
+
+<!-- ===== PANTALLA DE LOGIN ===== -->
+<div class="wrap" id="authWrap" style="max-width:420px; padding-top:10px;">
+  <section class="card">
+    <h2 style="justify-content:center; margin-bottom:20px;"><span class="dot" style="background:var(--gold)"></span><span id="authTitle">Iniciar sesión</span></h2>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Email</label>
+      <input type="text" id="authEmail" placeholder="tu@email.com">
+    </div>
+    <div class="field" style="margin-bottom:16px;">
+      <label>Contraseña</label>
+      <input type="password" id="authPassword" placeholder="mínimo 6 caracteres">
+    </div>
+    <button id="authSubmit" style="width:100%; padding:13px; border:none; border-radius:12px; background:linear-gradient(120deg, var(--gold), #D9A75E); color:var(--navy-deep); font-family:'Sora'; font-weight:700; cursor:pointer;">Entrar</button>
+    <div style="text-align:center; margin-top:14px; font-size:13px;">
+      <a id="authToggle" style="color:var(--cream-dim); text-decoration:underline; cursor:pointer;">¿Primera vez? Crea tu cuenta</a>
+    </div>
+    <div id="authMsg" style="text-align:center; font-size:13px; color:var(--rose); margin-top:10px; min-height:16px;"></div>
+  </section>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none;">
+
+  <div class="moon-card">
+    <div class="moon-visual" id="moonVisual"></div>
+    <div class="moon-info">
+      <div class="label">Ciclo</div>
+      <div class="value" id="cycleValue">Sin datos aún</div>
+      <button id="markPeriodBtn">Hoy empezó mi periodo</button>
+    </div>
+  </div>
+
+  <div class="date-row">
+    <button class="nav-btn" id="prevDay">‹</button>
+    <input type="date" id="entryDate">
+    <button class="nav-btn" id="nextDay">›</button>
+  </div>
+
+  <div id="loadingMsg" class="loading">Cargando tu bitácora…</div>
+
+  <div id="formArea" style="display:none;">
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--gold)"></span>Peso y medidas</h2>
+      <div class="field-row">
+        <div class="field">
+          <label>Peso (kg)</label>
+          <input type="number" step="0.1" id="weight" placeholder="ej. 62.5">
+        </div>
+        <div class="field">
+          <label>Cintura (cm) — opcional</label>
+          <input type="number" step="0.1" id="waist" placeholder="ej. 78">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--sage)"></span>Ánimo y energía</h2>
+      <div class="field">
+        <label>Ánimo</label>
+        <div class="scale" id="moodScale">
+          <button data-v="1">😞</button>
+          <button data-v="2">😕</button>
+          <button data-v="3">😐</button>
+          <button data-v="4">🙂</button>
+          <button data-v="5">😄</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Energía (1–5)</label>
+        <div class="scale" id="energyScale">
+          <button data-v="1">1</button>
+          <button data-v="2">2</button>
+          <button data-v="3">3</button>
+          <button data-v="4">4</button>
+          <button data-v="5">5</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--plum)"></span>Sueño</h2>
+      <div class="field-row">
+        <div class="field">
+          <label>Horas dormidas</label>
+          <input type="number" step="0.5" id="sleepHours" placeholder="ej. 7">
+        </div>
+        <div class="field">
+          <label>Calidad (1–5)</label>
+          <div class="scale" id="sleepScale">
+            <button data-v="1">1</button>
+            <button data-v="2">2</button>
+            <button data-v="3">3</button>
+            <button data-v="4">4</button>
+            <button data-v="5">5</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--rose)"></span>Piel y cabello</h2>
+      <div class="tags" id="skinTags">
+        <div class="tag" data-tag="piel radiante">Piel radiante</div>
+        <div class="tag" data-tag="piel grasa">Piel grasa</div>
+        <div class="tag" data-tag="acné">Acné</div>
+        <div class="tag" data-tag="piel seca">Piel seca</div>
+        <div class="tag" data-tag="cabello graso">Cabello graso</div>
+        <div class="tag" data-tag="caída de cabello">Caída de cabello</div>
+        <div class="tag" data-tag="cabello brillante">Cabello brillante</div>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Nota rápida</label>
+        <textarea id="skinNote" placeholder="algo que notaste hoy..."></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--gold)"></span>Ejercicio</h2>
+      <div class="exercise-suggest" id="exerciseSuggest"></div>
+      <div class="check-row">
+        <input type="checkbox" id="exerciseDone">
+        <label for="exerciseDone">Hice actividad física hoy</label>
+      </div>
+      <div class="field">
+        <label>Nota (qué hiciste, cómo te sentiste)</label>
+        <textarea id="exerciseNote" placeholder="ej. 20 min fuerza piernas, se sintió bien"></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--sage)"></span>Alimentación general</h2>
+      <div class="field">
+        <label>¿Qué tan equilibrado comiste hoy? (1–5, no es sobre calorías)</label>
+        <div class="scale" id="eatingScale">
+          <button data-v="1">1</button>
+          <button data-v="2">2</button>
+          <button data-v="3">3</button>
+          <button data-v="4">4</button>
+          <button data-v="5">5</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Nota (opcional)</label>
+        <textarea id="eatingNote" placeholder="ej. tomé bastante agua, poco desayuno..."></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--rose)"></span>Ciclo (SOP)</h2>
+      <div class="field">
+        <label>Flujo hoy</label>
+        <div class="tags" id="flowTags">
+          <div class="tag" data-tag="ninguno">Ninguno</div>
+          <div class="tag" data-tag="ligero">Ligero</div>
+          <div class="tag" data-tag="moderado">Moderado</div>
+          <div class="tag" data-tag="abundante">Abundante</div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Síntomas</label>
+        <div class="tags" id="symptomTags">
+          <div class="tag" data-tag="cólicos">Cólicos</div>
+          <div class="tag" data-tag="hinchazón">Hinchazón</div>
+          <div class="tag" data-tag="antojos">Antojos</div>
+          <div class="tag" data-tag="cambios de ánimo">Cambios de ánimo</div>
+          <div class="tag" data-tag="dolor de cabeza">Dolor de cabeza</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--sage)"></span>Mi lista médica</h2>
+      <p style="font-size:12px; color:var(--cream-dim); margin-bottom:12px;">Lo que tu doctora te indicó. Esto se guarda una sola vez y se usa para que las sugerencias nunca contradigan lo que ella te dijo.</p>
+
+      <div style="background: rgba(232,184,109,0.08); border:1px dashed rgba(232,184,109,0.4); border-radius:12px; padding:14px; margin-bottom:16px;">
+        <label style="font-size:12px; color:var(--gold); display:block; margin-bottom:8px;">📷 ¿Tienes una foto de la indicación de tu doctora?</label>
+        <input type="file" id="foodPhotoInput" accept="image/*" style="font-size:12px; color:var(--cream-dim); margin-bottom:8px; width:100%;">
+        <button id="analyzePhotoBtn" style="width:100%; padding:10px; border:none; border-radius:10px; background: var(--gold); color:var(--navy-deep); font-family:'Sora'; font-weight:600; font-size:13px; cursor:pointer;">Analizar foto y rellenar campos</button>
+        <div id="photoMsg" style="text-align:center; font-size:12px; color:var(--sage); margin-top:8px; min-height:14px;"></div>
+      </div>
+
+      <div class="field" style="margin-bottom:12px;">
+        <label>Alimentos permitidos / recomendados</label>
+        <textarea id="foodsAllowed" style="min-height:70px;" placeholder="ej. proteína magra, verduras de hoja verde, avena..."></textarea>
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <label>Alimentos a evitar</label>
+        <textarea id="foodsAvoid" style="min-height:70px;" placeholder="ej. gluten, lácteos, azúcar refinada..."></textarea>
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <label>Otras notas médicas (opcional)</label>
+        <textarea id="medicalNotes" placeholder="cualquier otra indicación de tu doctora..."></textarea>
+      </div>
+      <button id="saveProfileBtn" style="width:100%; padding:11px; border:none; border-radius:10px; background: var(--plum); color:var(--cream); font-family:'Sora'; font-weight:600; font-size:13px; cursor:pointer;">Guardar mi lista médica</button>
+      <div id="profileMsg" style="text-align:center; font-size:12px; color:var(--sage); margin-top:8px; min-height:14px;"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot" style="background:var(--gold)"></span>Diario del día</h2>
+      <div class="field">
+        <label>Cuéntame cómo estuvo tu día — lo que hiciste, cómo te sentiste, cualquier cosa</label>
+        <textarea id="diaryNote" style="min-height:90px;" placeholder="hoy me sentí..."></textarea>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="history-toggle"><a id="recInsightLink">🌸 Sugerencias para ti hoy →</a></div>
+  <div id="recPanel" class="card" style="display:none;"></div>
+
+  <div class="history-toggle"><a id="aiInsightLink">✨ Pedir análisis a la IA →</a></div>
+  <div id="aiPanel" class="card" style="display:none;"></div>
+
+  <div class="history-toggle"><a id="historyLink">Ver mi historial →</a></div>
+
+  <div id="historyPanel" class="card"></div>
+
+  <div class="history-toggle"><a id="logoutLink">Cerrar sesión</a></div>
+
+</div>
+
+<div class="save-bar" id="saveBar" style="display:none;">
+  <button id="saveBtn">Guardar registro de hoy</button>
+  <div class="save-msg" id="saveMsg"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ======================================================
+// CONFIGURA ESTO ANTES DE DESPLEGAR (lee el README.md)
+// ======================================================
+const SUPABASE_URL = "TU_SUPABASE_URL_AQUI";
+const SUPABASE_ANON_KEY = "TU_SUPABASE_ANON_KEY_AQUI";
+// ======================================================
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+
+// ---------- AUTH ----------
+let isSignUp = false;
+document.getElementById('authToggle').addEventListener('click', () => {
+  isSignUp = !isSignUp;
+  document.getElementById('authTitle').textContent = isSignUp ? 'Crear cuenta' : 'Iniciar sesión';
+  document.getElementById('authSubmit').textContent = isSignUp ? 'Crear cuenta' : 'Entrar';
+  document.getElementById('authToggle').textContent = isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿Primera vez? Crea tu cuenta';
+  document.getElementById('authMsg').textContent = '';
+});
+
+document.getElementById('authSubmit').addEventListener('click', async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const msg = document.getElementById('authMsg');
+  if(!email || password.length < 6){
+    msg.style.color = 'var(--rose)';
+    msg.textContent = 'Escribe un email válido y contraseña de al menos 6 caracteres';
+    return;
+  }
+  msg.style.color = 'var(--cream-dim)';
+  msg.textContent = 'Un momento…';
+  const { data, error } = isSignUp
+    ? await sb.auth.signUp({ email, password })
+    : await sb.auth.signInWithPassword({ email, password });
+  if(error){
+    msg.style.color = 'var(--rose)';
+    msg.textContent = error.message;
+    return;
+  }
+  if(isSignUp && !data.session){
+    msg.style.color = 'var(--sage)';
+    msg.textContent = 'Cuenta creada. Revisa tu email para confirmar, luego inicia sesión.';
+    return;
+  }
+  onLoggedIn(data.user);
+});
+
+document.getElementById('logoutLink').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  currentUser = null;
+  document.getElementById('appWrap').style.display = 'none';
+  document.getElementById('saveBar').style.display = 'none';
+  document.getElementById('authWrap').style.display = 'block';
+  document.getElementById('headerSub').textContent = 'Un registro suave, no una exigencia';
+});
+
+function onLoggedIn(user){
+  currentUser = user;
+  document.getElementById('authWrap').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'block';
+  document.getElementById('saveBar').style.display = 'block';
+  document.getElementById('headerSub').textContent = user.email;
+  loadEntry(todayStr());
+  loadPeriodStarts();
+  loadProfile();
+}
+
+async function loadProfile(){
+  try{
+    const { data, error } = await sb.from('profile').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if(error) throw error;
+    document.getElementById('foodsAllowed').value = data?.foods_allowed || '';
+    document.getElementById('foodsAvoid').value = data?.foods_avoid || '';
+    document.getElementById('medicalNotes').value = data?.medical_notes || '';
+  }catch(e){ /* silencioso, perfil vacío está bien */ }
+}
+
+document.getElementById('analyzePhotoBtn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('foodPhotoInput');
+  const msg = document.getElementById('photoMsg');
+  const file = fileInput.files[0];
+  if(!file){
+    msg.style.color = 'var(--rose)';
+    msg.textContent = 'Primero selecciona una foto';
+    return;
+  }
+  if(file.size > 5 * 1024 * 1024){
+    msg.style.color = 'var(--rose)';
+    msg.textContent = 'La foto es muy pesada (máx 5MB), intenta con otra o recórtala';
+    return;
+  }
+  msg.style.color = 'var(--cream-dim)';
+  msg.textContent = 'Leyendo la imagen…';
+  try{
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = () => rej(new Error('No se pudo leer el archivo'));
+      r.readAsDataURL(file);
+    });
+    const resp = await fetch('/.netlify/functions/extract-food-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64, mediaType: file.type || 'image/jpeg' })
+    });
+    if(!resp.ok) throw new Error('función no disponible (revisa que esté desplegada y con ANTHROPIC_API_KEY configurada)');
+    const result = await resp.json();
+    if(result.error){
+      msg.style.color = 'var(--rose)';
+      msg.textContent = result.error;
+      return;
+    }
+    if(result.foodsAllowed) document.getElementById('foodsAllowed').value =
+      (document.getElementById('foodsAllowed').value ? document.getElementById('foodsAllowed').value + ', ' : '') + result.foodsAllowed;
+    if(result.foodsAvoid) document.getElementById('foodsAvoid').value =
+      (document.getElementById('foodsAvoid').value ? document.getElementById('foodsAvoid').value + ', ' : '') + result.foodsAvoid;
+    if(result.medicalNotes) document.getElementById('medicalNotes').value =
+      (document.getElementById('medicalNotes').value ? document.getElementById('medicalNotes').value + '. ' : '') + result.medicalNotes;
+    msg.style.color = 'var(--sage)';
+    msg.textContent = 'Listo — revisa los campos y dale "Guardar mi lista médica"';
+  }catch(e){
+    msg.style.color = 'var(--rose)';
+    msg.textContent = 'No se pudo analizar: ' + e.message;
+  }
+});
+
+document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('profileMsg');
+  try{
+    const { error } = await sb.from('profile').upsert({
+      user_id: currentUser.id,
+      foods_allowed: document.getElementById('foodsAllowed').value,
+      foods_avoid: document.getElementById('foodsAvoid').value,
+      medical_notes: document.getElementById('medicalNotes').value,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if(error) throw error;
+    msg.style.color = 'var(--sage)';
+    msg.textContent = 'Guardado ✓ — se usará en tus próximas sugerencias';
+    setTimeout(() => msg.textContent = '', 3000);
+  }catch(e){
+    msg.style.color = 'var(--rose)';
+    msg.textContent = 'No se guardó: ' + e.message;
+  }
+});
+
+// al cargar, revisa si ya había sesión activa
+sb.auth.getSession().then(({ data }) => {
+  if(data.session) onLoggedIn(data.session.user);
+});
+</script>
+<script>
+let currentEntry = {};
+let periodStarts = [];
+let sessionBackup = {};
+
+function fmtDate(d){ return d.toISOString().split('T')[0]; }
+function todayStr(){ return fmtDate(new Date()); }
+
+const entryDateInput = document.getElementById('entryDate');
+entryDateInput.value = todayStr();
+
+const exercisePlan = {
+  1: "Lunes — Descanso activo: mobility/recovery 10-15 min o caminata suave",
+  2: "Martes — Cardio ligero: caminata/cardio bajo impacto 20-25 min",
+  3: "Miércoles — Fuerza piernas y glúteos, 20-25 min",
+  4: "Jueves — Descanso o estiramiento 10 min",
+  5: "Viernes — Fuerza core y tren superior, 20 min",
+  6: "Sábado — Cardio moderado, trote/caminata suave 15-20 min",
+  0: "Domingo — Libre: paddleboard, caminar con el perro, lo que disfrutes"
+};
+
+function setSuggestion(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  document.getElementById('exerciseSuggest').textContent = "Plan sugerido: " + exercisePlan[d.getDay()];
+}
+
+function selectScale(containerId, val){
+  const btns = document.querySelectorAll('#' + containerId + ' button');
+  btns.forEach(b => b.classList.toggle('active', b.dataset.v == val));
+}
+function getScaleVal(containerId){
+  const active = document.querySelector('#' + containerId + ' button.active');
+  return active ? parseInt(active.dataset.v) : null;
+}
+document.querySelectorAll('.scale').forEach(sc => {
+  sc.addEventListener('click', e => {
+    if(e.target.tagName === 'BUTTON'){
+      sc.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+    }
+  });
+});
+
+function setupTagGroup(containerId, multi){
+  const el = document.getElementById(containerId);
+  el.addEventListener('click', e => {
+    const tag = e.target.closest('.tag');
+    if(!tag) return;
+    if(!multi){
+      el.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+    }
+    tag.classList.toggle('active');
+  });
+}
+setupTagGroup('skinTags', true);
+setupTagGroup('flowTags', false);
+setupTagGroup('symptomTags', true);
+
+function getActiveTags(containerId){
+  return Array.from(document.querySelectorAll('#' + containerId + ' .tag.active')).map(t => t.dataset.tag);
+}
+function setActiveTags(containerId, arr){
+  document.querySelectorAll('#' + containerId + ' .tag').forEach(t => {
+    t.classList.toggle('active', arr && arr.includes(t.dataset.tag));
+  });
+}
+
+function clearForm(){
+  document.getElementById('weight').value = '';
+  document.getElementById('waist').value = '';
+  document.getElementById('sleepHours').value = '';
+  document.getElementById('skinNote').value = '';
+  document.getElementById('exerciseNote').value = '';
+  document.getElementById('eatingNote').value = '';
+  document.getElementById('diaryNote').value = '';
+  document.getElementById('exerciseDone').checked = false;
+  document.querySelectorAll('.scale button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+}
+
+function fillForm(entry){
+  clearForm();
+  if(!entry) return;
+  document.getElementById('weight').value = entry.weight || '';
+  document.getElementById('waist').value = entry.waist || '';
+  document.getElementById('sleepHours').value = entry.sleepHours || '';
+  document.getElementById('skinNote').value = entry.skinNote || '';
+  document.getElementById('exerciseNote').value = entry.exerciseNote || '';
+  document.getElementById('eatingNote').value = entry.eatingNote || '';
+  document.getElementById('diaryNote').value = entry.diaryNote || '';
+  document.getElementById('exerciseDone').checked = !!entry.exerciseDone;
+  if(entry.mood) selectScale('moodScale', entry.mood);
+  if(entry.energy) selectScale('energyScale', entry.energy);
+  if(entry.sleepQuality) selectScale('sleepScale', entry.sleepQuality);
+  if(entry.eatingScore) selectScale('eatingScale', entry.eatingScore);
+  setActiveTags('skinTags', entry.skinTags);
+  setActiveTags('flowTags', entry.flow ? [entry.flow] : []);
+  setActiveTags('symptomTags', entry.symptoms);
+}
+
+function rowToEntry(row){
+  if(!row) return {};
+  return {
+    date: row.date, weight: row.weight, waist: row.waist, mood: row.mood, energy: row.energy,
+    sleepHours: row.sleep_hours, sleepQuality: row.sleep_quality, skinTags: row.skin_tags || [],
+    skinNote: row.skin_note, exerciseDone: row.exercise_done, exerciseNote: row.exercise_note,
+    eatingScore: row.eating_score, eatingNote: row.eating_note, diaryNote: row.diary_note,
+    flow: row.flow, symptoms: row.symptoms || []
+  };
+}
+
+async function loadEntry(dateStr){
+  document.getElementById('loadingMsg').style.display = 'block';
+  document.getElementById('formArea').style.display = 'none';
+  try{
+    const { data, error } = await sb.from('entries').select('*')
+      .eq('user_id', currentUser.id).eq('date', dateStr).maybeSingle();
+    if(error) throw error;
+    currentEntry = rowToEntry(data);
+  }catch(e){
+    currentEntry = {};
+  }
+  fillForm(currentEntry);
+  setSuggestion(dateStr);
+  document.getElementById('loadingMsg').style.display = 'none';
+  document.getElementById('formArea').style.display = 'block';
+}
+
+async function loadPeriodStarts(){
+  try{
+    const { data, error } = await sb.from('period_starts').select('date').eq('user_id', currentUser.id);
+    if(error) throw error;
+    periodStarts = (data || []).map(r => r.date);
+  }catch(e){
+    periodStarts = [];
+  }
+  updateMoonCard();
+}
+
+function updateMoonCard(){
+  if(periodStarts.length === 0){
+    document.getElementById('cycleValue').textContent = 'Sin datos aún';
+    return;
+  }
+  const sorted = [...periodStarts].sort();
+  const last = new Date(sorted[sorted.length - 1] + 'T00:00:00');
+  const today = new Date(todayStr() + 'T00:00:00');
+  const diffDays = Math.round((today - last) / 86400000);
+  document.getElementById('cycleValue').textContent = diffDays === 0
+    ? 'Día 1 de tu ciclo'
+    : 'Día ' + (diffDays + 1) + ' desde tu última regla';
+
+  // moon phase visual: cycle through phase based on diffDays mod 28, purely decorative
+  const phase = (diffDays % 28) / 28;
+  const moon = document.getElementById('moonVisual');
+  const shadowPos = 35 + phase * 40;
+  moon.style.background = `radial-gradient(circle at ${shadowPos}% 35%, #FBEFD9, var(--gold) 55%, #B98A45 100%)`;
+}
+
+document.getElementById('markPeriodBtn').addEventListener('click', async () => {
+  const t = todayStr();
+  try{
+    await sb.from('period_starts').upsert({ user_id: currentUser.id, date: t }, { onConflict: 'user_id,date' });
+    if(!periodStarts.includes(t)) periodStarts.push(t);
+    updateMoonCard();
+    document.getElementById('saveMsg').textContent = 'Registrado el inicio de tu periodo 🌙';
+  }catch(e){
+    document.getElementById('saveMsg').textContent = 'No se pudo registrar: ' + e.message;
+  }
+  setTimeout(() => document.getElementById('saveMsg').textContent = '', 2500);
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const dateStr = entryDateInput.value;
+  const entry = {
+    date: dateStr,
+    weight: document.getElementById('weight').value || null,
+    waist: document.getElementById('waist').value || null,
+    mood: getScaleVal('moodScale'),
+    energy: getScaleVal('energyScale'),
+    sleepHours: document.getElementById('sleepHours').value || null,
+    sleepQuality: getScaleVal('sleepScale'),
+    skinTags: getActiveTags('skinTags'),
+    skinNote: document.getElementById('skinNote').value,
+    exerciseDone: document.getElementById('exerciseDone').checked,
+    exerciseNote: document.getElementById('exerciseNote').value,
+    eatingScore: getScaleVal('eatingScale'),
+    eatingNote: document.getElementById('eatingNote').value,
+    diaryNote: document.getElementById('diaryNote').value,
+    flow: (getActiveTags('flowTags')[0]) || null,
+    symptoms: getActiveTags('symptomTags')
+  };
+  sessionBackup[dateStr] = entry;
+  const row = {
+    user_id: currentUser.id, date: entry.date, weight: entry.weight, waist: entry.waist,
+    mood: entry.mood, energy: entry.energy, sleep_hours: entry.sleepHours, sleep_quality: entry.sleepQuality,
+    skin_tags: entry.skinTags, skin_note: entry.skinNote, exercise_done: entry.exerciseDone,
+    exercise_note: entry.exerciseNote, eating_score: entry.eatingScore, eating_note: entry.eatingNote,
+    diary_note: entry.diaryNote, flow: entry.flow, symptoms: entry.symptoms
+  };
+  try{
+    const { error } = await sb.from('entries').upsert(row, { onConflict: 'user_id,date' });
+    if(error) throw error;
+    document.getElementById('saveMsg').textContent = 'Guardado ✓';
+    setTimeout(() => document.getElementById('saveMsg').textContent = '', 2000);
+  }catch(e){
+    document.getElementById('saveMsg').innerHTML = 'No se guardó (' + e.message + '). Copia local disponible: <a href="#" id="downloadBackup" style="color:var(--gold); text-decoration:underline;">Descargar</a>';
+    document.getElementById('downloadBackup').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      downloadBackup();
+    });
+  }
+});
+
+function downloadBackup(){
+  const blob = new Blob([JSON.stringify(sessionBackup, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bitacora-respaldo-' + todayStr() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('prevDay').addEventListener('click', () => {
+  const d = new Date(entryDateInput.value + 'T00:00:00');
+  d.setDate(d.getDate() - 1);
+  entryDateInput.value = fmtDate(d);
+  loadEntry(entryDateInput.value);
+});
+document.getElementById('nextDay').addEventListener('click', () => {
+  const d = new Date(entryDateInput.value + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  entryDateInput.value = fmtDate(d);
+  loadEntry(entryDateInput.value);
+});
+entryDateInput.addEventListener('change', () => loadEntry(entryDateInput.value));
+
+document.getElementById('recInsightLink').addEventListener('click', async () => {
+  const panel = document.getElementById('recPanel');
+  if(panel.style.display === 'block'){
+    panel.style.display = 'none';
+    document.getElementById('recInsightLink').textContent = '🌸 Sugerencias para ti hoy →';
+    return;
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div class="loading">Revisando tus últimos días…</div>';
+  document.getElementById('recInsightLink').textContent = '🌸 Ocultar sugerencias ↑';
+  try{
+    const { data: rows, error } = await sb.from('entries').select('*')
+      .eq('user_id', currentUser.id).order('date', { ascending: true }).limit(10);
+    if(error) throw error;
+    const entries = (rows || []).map(rowToEntry);
+    let cycleDay = null;
+    if(periodStarts.length){
+      const sorted = [...periodStarts].sort();
+      const last = new Date(sorted[sorted.length - 1] + 'T00:00:00');
+      cycleDay = Math.round((new Date(todayStr() + 'T00:00:00') - last) / 86400000) + 1;
+    }
+    const resp = await fetch('/.netlify/functions/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        entries,
+        cycleDay,
+        foodsAllowed: document.getElementById('foodsAllowed').value,
+        foodsAvoid: document.getElementById('foodsAvoid').value,
+        medicalNotes: document.getElementById('medicalNotes').value
+      })
+    });
+    if(!resp.ok) throw new Error('función recommend no disponible (revisa que esté desplegada y con ANTHROPIC_API_KEY configurada)');
+    const rec = await resp.json();
+    panel.innerHTML = `
+      <h2 style="margin-bottom:12px;"><span class="dot" style="background:var(--sage)"></span>Ejercicio</h2>
+      <p style="font-size:14px; color:var(--cream-dim); line-height:1.6; margin-bottom:18px;">${rec.exercise || ''}</p>
+      <h2 style="margin-bottom:12px;"><span class="dot" style="background:var(--gold)"></span>Alimentación</h2>
+      <p style="font-size:14px; color:var(--cream-dim); line-height:1.6; margin-bottom:18px;">${rec.food || ''}</p>
+      <h2 style="margin-bottom:12px;"><span class="dot" style="background:var(--rose)"></span>Ánimo y autocuidado</h2>
+      <p style="font-size:14px; color:var(--cream-dim); line-height:1.6;">${rec.mood || ''}</p>
+      ${rec.flag ? `<p style="font-size:13px; color:var(--gold); margin-top:16px; border-top:1px solid var(--line); padding-top:12px;">💛 ${rec.flag}</p>` : ''}
+      <p style="font-size:11px; color:var(--cream-dim); opacity:0.6; margin-top:16px;">Estas son sugerencias generales, no un plan médico ni nutricional. Para algo específico a tu hipotiroidismo/SOP, consulta a tu médico o nutricionista.</p>
+    `;
+  }catch(e){
+    panel.innerHTML = '<div class="loading">No se pudo generar la sugerencia: ' + e.message + '</div>';
+  }
+});
+
+document.getElementById('aiInsightLink').addEventListener('click', async () => {
+  const panel = document.getElementById('aiPanel');
+  if(panel.style.display === 'block'){
+    panel.style.display = 'none';
+    document.getElementById('aiInsightLink').textContent = '✨ Pedir análisis a la IA →';
+    return;
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div class="loading">Leyendo tus últimos días…</div>';
+  document.getElementById('aiInsightLink').textContent = '✨ Ocultar análisis ↑';
+  try{
+    const { data: rows, error } = await sb.from('entries').select('*')
+      .eq('user_id', currentUser.id).order('date', { ascending: true }).limit(14);
+    if(error) throw error;
+    if(!rows || rows.length < 3){
+      panel.innerHTML = '<div class="loading">Necesito al menos 3 días registrados para encontrar patrones. Sigue llenando tu bitácora 🌙</div>';
+      return;
+    }
+    const entries = rows.map(rowToEntry);
+    const resp = await fetch('/.netlify/functions/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries })
+    });
+    if(!resp.ok) throw new Error('función analyze no disponible (revisa que esté desplegada y con ANTHROPIC_API_KEY configurada)');
+    const data = await resp.json();
+    panel.innerHTML = `<h2 style="margin-bottom:10px;"><span class="dot" style="background:var(--gold)"></span>Lo que veo en tus últimos días</h2><div style="white-space:pre-wrap; line-height:1.6; font-size:14px; color:var(--cream-dim);">${data.text}</div>`;
+  }catch(e){
+    panel.innerHTML = '<div class="loading">No se pudo generar el análisis: ' + e.message + '</div>';
+  }
+});
+
+document.getElementById('historyLink').addEventListener('click', async () => {
+  const panel = document.getElementById('historyPanel');
+  if(panel.style.display === 'block'){
+    panel.style.display = 'none';
+    document.getElementById('historyLink').textContent = 'Ver mi historial →';
+    return;
+  }
+  panel.innerHTML = '<div class="loading">Cargando…</div>';
+  panel.style.display = 'block';
+  document.getElementById('historyLink').textContent = 'Ocultar historial ↑';
+  try{
+    const { data, error } = await sb.from('entries').select('*')
+      .eq('user_id', currentUser.id).order('date', { ascending: false }).limit(14);
+    if(error) throw error;
+    if(!data || data.length === 0){
+      panel.innerHTML = '<div class="loading">Aún no tienes registros guardados.</div>';
+      return;
+    }
+    let html = '';
+    for(const row of data){
+      const e = rowToEntry(row);
+      const parts = [];
+      if(e.weight) parts.push('Peso: ' + e.weight + 'kg');
+      if(e.mood) parts.push('Ánimo: ' + e.mood + '/5');
+      if(e.sleepHours) parts.push('Sueño: ' + e.sleepHours + 'h');
+      if(e.exerciseDone) parts.push('Ejercicio ✓');
+      html += `<div class="history-entry"><div class="h-date">${e.date}</div><div class="h-line">${parts.join(' · ') || 'Sin detalles'}</div></div>`;
+    }
+    panel.innerHTML = html;
+  }catch(err){
+    panel.innerHTML = '<div class="loading">No se pudo cargar el historial.</div>';
+  }
+});
+
+</script>
+</body>
+</html>
