@@ -122,7 +122,7 @@ section.card h2 .dot{
 .field-row{ display:flex; gap:12px; margin-bottom: 12px; flex-wrap: wrap;}
 .field{ flex:1; min-width: 120px;}
 .field label{ font-size:12px; color:var(--cream-dim); display:block; margin-bottom:5px;}
-.field input[type=number], .field input[type=text], .field textarea{
+.field input[type=number], .field input[type=text], .field input[type=password], .field textarea{
   width:100%; background: rgba(245,240,232,0.06); border:1px solid var(--line);
   color:var(--cream); padding:9px 12px; border-radius:10px; font-family:'Sora'; font-size:14px;
 }
@@ -144,6 +144,8 @@ section.card h2 .dot{
   background: rgba(245,240,232,0.04); color:var(--cream-dim); font-size:13px; cursor:pointer;
 }
 .tag.active{ background: var(--plum); color: var(--cream); border-color: var(--plum);}
+.tag.active::before{ content: "✓ "; }
+.tag-hint{ font-size:11px; color:var(--cream-dim); opacity:0.7; margin-top:6px; }
 
 .exercise-suggest{
   background: rgba(232,184,109,0.08); border:1px dashed rgba(232,184,109,0.4);
@@ -235,15 +237,21 @@ section.card h2 .dot{
   <div id="formArea" style="display:none;">
 
     <section class="card">
-      <h2><span class="dot" style="background:var(--gold)"></span>Peso y medidas</h2>
-      <div class="field-row">
-        <div class="field">
-          <label>Peso (kg)</label>
-          <input type="number" step="0.1" id="weight" placeholder="ej. 62.5">
-        </div>
-        <div class="field">
-          <label>Cintura (cm) — opcional</label>
-          <input type="number" step="0.1" id="waist" placeholder="ej. 78">
+      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" id="weightToggle">
+        <h2 style="margin-bottom:0;"><span class="dot" style="background:var(--gold)"></span>Peso y medidas <span id="weightHint" style="font-size:11px; color:var(--cream-dim); font-weight:400; margin-left:6px;"></span></h2>
+        <span id="weightChevron" style="color:var(--cream-dim);">＋</span>
+      </div>
+      <div id="weightBody" style="display:none; margin-top:14px;">
+        <p style="font-size:12px; color:var(--cream-dim); margin-bottom:10px;">No hace falta registrarlo cada día — cuando tú quieras.</p>
+        <div class="field-row">
+          <div class="field">
+            <label>Peso (kg)</label>
+            <input type="number" step="0.1" id="weight" placeholder="ej. 62.5">
+          </div>
+          <div class="field">
+            <label>Cintura (cm) — opcional</label>
+            <input type="number" step="0.1" id="waist" placeholder="ej. 78">
+          </div>
         </div>
       </div>
     </section>
@@ -303,6 +311,7 @@ section.card h2 .dot{
         <div class="tag" data-tag="caída de cabello">Caída de cabello</div>
         <div class="tag" data-tag="cabello brillante">Cabello brillante</div>
       </div>
+      <div class="tag-hint">Toca para marcar — puedes elegir varias</div>
       <div class="field" style="margin-top:12px;">
         <label>Nota rápida</label>
         <textarea id="skinNote" placeholder="algo que notaste hoy..."></textarea>
@@ -350,6 +359,7 @@ section.card h2 .dot{
           <div class="tag" data-tag="moderado">Moderado</div>
           <div class="tag" data-tag="abundante">Abundante</div>
         </div>
+        <div class="tag-hint">Toca para marcar — elige solo una</div>
       </div>
       <div class="field" style="margin-top:12px;">
         <label>Síntomas</label>
@@ -360,6 +370,7 @@ section.card h2 .dot{
           <div class="tag" data-tag="cambios de ánimo">Cambios de ánimo</div>
           <div class="tag" data-tag="dolor de cabeza">Dolor de cabeza</div>
         </div>
+        <div class="tag-hint">Toca para marcar — puedes elegir varias</div>
       </div>
     </section>
 
@@ -486,6 +497,7 @@ function onLoggedIn(user){
   loadEntry(todayStr());
   loadPeriodStarts();
   loadProfile();
+  checkWeightReminder();
 }
 
 async function loadProfile(){
@@ -683,7 +695,11 @@ function rowToEntry(row){
   };
 }
 
+let isLoadingEntry = false;
+
 async function loadEntry(dateStr){
+  if(isLoadingEntry) return;
+  isLoadingEntry = true;
   document.getElementById('loadingMsg').style.display = 'block';
   document.getElementById('formArea').style.display = 'none';
   try{
@@ -694,10 +710,15 @@ async function loadEntry(dateStr){
   }catch(e){
     currentEntry = {};
   }
-  fillForm(currentEntry);
-  setSuggestion(dateStr);
+  try{
+    fillForm(currentEntry);
+    setSuggestion(dateStr);
+  }catch(e){
+    console.error('Error llenando formulario', e);
+  }
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('formArea').style.display = 'block';
+  isLoadingEntry = false;
 }
 
 async function loadPeriodStarts(){
@@ -729,6 +750,31 @@ function updateMoonCard(){
   const moon = document.getElementById('moonVisual');
   const shadowPos = 35 + phase * 40;
   moon.style.background = `radial-gradient(circle at ${shadowPos}% 35%, #FBEFD9, var(--gold) 55%, #B98A45 100%)`;
+}
+
+document.getElementById('weightToggle').addEventListener('click', () => {
+  const body = document.getElementById('weightBody');
+  const chevron = document.getElementById('weightChevron');
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  chevron.textContent = isOpen ? '＋' : '－';
+});
+
+async function checkWeightReminder(){
+  try{
+    const { data, error } = await sb.from('entries').select('date,weight')
+      .eq('user_id', currentUser.id).not('weight', 'is', null)
+      .order('date', { ascending: false }).limit(1);
+    if(error) throw error;
+    const hint = document.getElementById('weightHint');
+    if(!data || data.length === 0){
+      hint.textContent = '';
+      return;
+    }
+    const last = new Date(data[0].date + 'T00:00:00');
+    const days = Math.round((new Date(todayStr() + 'T00:00:00') - last) / 86400000);
+    hint.textContent = days >= 7 ? '(hace ' + days + ' días que no lo registras)' : '';
+  }catch(e){ /* silencioso */ }
 }
 
 document.getElementById('markPeriodBtn').addEventListener('click', async () => {
@@ -799,12 +845,14 @@ function downloadBackup(){
 }
 
 document.getElementById('prevDay').addEventListener('click', () => {
+  if(isLoadingEntry) return;
   const d = new Date(entryDateInput.value + 'T00:00:00');
   d.setDate(d.getDate() - 1);
   entryDateInput.value = fmtDate(d);
   loadEntry(entryDateInput.value);
 });
 document.getElementById('nextDay').addEventListener('click', () => {
+  if(isLoadingEntry) return;
   const d = new Date(entryDateInput.value + 'T00:00:00');
   d.setDate(d.getDate() + 1);
   entryDateInput.value = fmtDate(d);
