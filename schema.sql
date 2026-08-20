@@ -30,6 +30,13 @@ create table period_starts (
   unique(user_id, date)
 );
 
+create table period_ends (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  date date not null,
+  unique(user_id, date)
+);
+
 create table profile (
   user_id uuid references auth.users primary key,
   foods_allowed text,
@@ -46,6 +53,11 @@ create policy "own entries" on entries
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "own period starts" on period_starts
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+alter table period_ends enable row level security;
+
+create policy "own period ends" on period_ends
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 alter table profile enable row level security;
