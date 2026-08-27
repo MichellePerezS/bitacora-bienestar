@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { sb } from './supabaseClient'
 import Auth from './components/Auth'
+import ResetPassword from './components/ResetPassword'
 import MoonCard from './components/MoonCard'
 import EntryForm from './components/EntryForm'
 import MedicalProfile from './components/MedicalProfile'
@@ -11,8 +12,18 @@ import HistoryPanel from './components/HistoryPanel'
 function todayStr(){ return new Date().toISOString().split('T')[0] }
 function fmtDate(d){ return d.toISOString().split('T')[0] }
 
+const SECTIONS = [
+  { id: 'hoy', icon: '🌙', label: 'Hoy' },
+  { id: 'historial', icon: '📖', label: 'Historial' },
+  { id: 'perfil', icon: '🩺', label: 'Perfil' },
+  { id: 'sugerencias', icon: '🌸', label: 'Sugerencias' },
+  { id: 'analisis', icon: '🔮', label: 'Análisis' },
+]
+
 export default function App(){
   const [user, setUser] = useState(null)
+  const [recovery, setRecovery] = useState(false)
+  const [section, setSection] = useState('hoy')
   const [date, setDate] = useState(todayStr())
   const [msg, setMsg] = useState({ text: '', ok: true })
   const [weightHint, setWeightHint] = useState('')
@@ -21,6 +32,14 @@ export default function App(){
     sb.auth.getSession().then(({ data }) => {
       if(data.session) setUser(data.session.user)
     })
+    // Cuando alguien entra desde el link de "recuperar contraseña" de su email,
+    // Supabase dispara este evento en vez de un login normal.
+    const { data: sub } = sb.auth.onAuthStateChange((event, session) => {
+      if(event === 'PASSWORD_RECOVERY') setRecovery(true)
+      if(session) setUser(session.user)
+      if(event === 'SIGNED_OUT'){ setUser(null); setRecovery(false) }
+    })
+    return () => sub.subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
@@ -64,25 +83,43 @@ export default function App(){
         <p>{user ? user.email : 'Un registro suave, no una exigencia'}</p>
       </header>
 
-      {!user && <Auth onLoggedIn={setUser} />}
+      {recovery && user && <ResetPassword onDone={() => setRecovery(false)} />}
 
-      {user && (
+      {!recovery && !user && <Auth onLoggedIn={setUser} />}
+
+      {!recovery && user && (
         <div className="wrap">
-          <MoonCard userId={user.id} onMsg={showMsg} />
+          <nav className="main-nav">
+            {SECTIONS.map(s => (
+              <button
+                key={s.id}
+                className={'main-nav-btn' + (section === s.id ? ' active' : '')}
+                onClick={() => setSection(s.id)}
+              >
+                <span className="main-nav-icon">{s.icon}</span>
+                <span className="main-nav-label">{s.label}</span>
+              </button>
+            ))}
+          </nav>
 
-          <div className="date-row">
-            <button className="nav-btn" onClick={() => shiftDay(-1)}>‹</button>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            <button className="nav-btn" onClick={() => shiftDay(1)}>›</button>
-          </div>
+          {section === 'hoy' && (
+            <>
+              <MoonCard userId={user.id} onMsg={showMsg} />
 
-          <EntryForm userId={user.id} date={date} onMsg={showMsg} weightHint={weightHint} refreshWeightHint={refreshWeightHint} />
+              <div className="date-row">
+                <button className="nav-btn" onClick={() => shiftDay(-1)}>‹</button>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+                <button className="nav-btn" onClick={() => shiftDay(1)}>›</button>
+              </div>
 
-          <MedicalProfile userId={user.id} />
+              <EntryForm userId={user.id} date={date} onMsg={showMsg} weightHint={weightHint} refreshWeightHint={refreshWeightHint} />
+            </>
+          )}
 
-          <RecommendPanel userId={user.id} />
-          <AnalyzePanel userId={user.id} />
-          <HistoryPanel userId={user.id} />
+          {section === 'historial' && <HistoryPanel userId={user.id} />}
+          {section === 'perfil' && <MedicalProfile userId={user.id} />}
+          {section === 'sugerencias' && <RecommendPanel userId={user.id} />}
+          {section === 'analisis' && <AnalyzePanel userId={user.id} />}
 
           <div className="link-toggle"><a onClick={logout}>Cerrar sesión</a></div>
         </div>

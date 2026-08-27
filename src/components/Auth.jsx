@@ -3,6 +3,7 @@ import { sb } from '../supabaseClient'
 
 export default function Auth({ onLoggedIn }){
   const [isSignUp, setIsSignUp] = useState(false)
+  const [forgot, setForgot] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState({ text: '', ok: false })
@@ -25,6 +26,44 @@ export default function Auth({ onLoggedIn }){
       return
     }
     onLoggedIn(data.user)
+  }
+
+  const sendReset = async () => {
+    if(!email){
+      setMsg({ text: 'Escribe el email de tu cuenta primero', ok: false })
+      return
+    }
+    setMsg({ text: 'Enviando…', ok: true })
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+    if(error){
+      setMsg({ text: error.message, ok: false })
+      return
+    }
+    setMsg({ text: 'Revisa tu email — te mandamos un enlace para crear una contraseña nueva', ok: true })
+  }
+
+  if(forgot){
+    return (
+      <div className="wrap" style={{ maxWidth: 420, paddingTop: 10 }}>
+        <section className="card">
+          <h2 style={{ justifyContent: 'center', marginBottom: 20 }}>
+            <span className="dot" style={{ background: 'var(--gold)' }}></span>
+            Recuperar contraseña
+          </h2>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label>Email de tu cuenta</label>
+            <input type="text" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          <button className="btn-secondary" style={{ width: '100%', padding: 13 }} onClick={sendReset}>
+            Enviar enlace de recuperación
+          </button>
+          <div className="link-toggle" style={{ marginTop: 14 }}>
+            <a onClick={() => { setForgot(false); setMsg({ text: '', ok: false }) }}>← Volver a iniciar sesión</a>
+          </div>
+          <div className={'save-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.text}</div>
+        </section>
+      </div>
+    )
   }
 
   return (
@@ -50,6 +89,11 @@ export default function Auth({ onLoggedIn }){
             {isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿Primera vez? Crea tu cuenta'}
           </a>
         </div>
+        {!isSignUp && (
+          <div className="link-toggle" style={{ marginTop: 2 }}>
+            <a onClick={() => { setForgot(true); setMsg({ text: '', ok: false }) }}>¿Olvidaste tu contraseña?</a>
+          </div>
+        )}
         <div className={'save-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.text}</div>
       </section>
     </div>
